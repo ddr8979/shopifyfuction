@@ -158,6 +158,10 @@ app.post("/api/discounts/configure", async (req, res) => {
 app.use(shopify.cspHeaders());
 app.use(serveStatic(STATIC_PATH, { index: false }));
 
+app.get("/privacy", (_req, res) => {
+  res.status(200).send("<h1>Política de Privacidad - Motor de Descuentos (SEC)</h1><p>Esta aplicación no recopila datos personales de los clientes. Solo procesa información del carrito para aplicar descuentos automáticos.</p>");
+});
+
 app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
   return res
     .status(200)
