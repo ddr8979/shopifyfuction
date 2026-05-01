@@ -21,7 +21,7 @@ const shopify = shopifyApp({
     apiVersion: LATEST_API_VERSION,
     restResources,
     scopes: (process.env.SCOPES || "write_products,write_discounts").split(","),
-    hostName: process.env.HOST ? process.env.HOST.replace(/https?:\\/\\//, "") : "shopifyfuction.onrender.com",
+    hostName: process.env.HOST ? process.env.HOST.replace("https://", "").replace("http://", "") : "shopifyfuction.onrender.com",
     future: {
       customerAddressDefaultFix: true,
       lineItemBilling: true,
