@@ -69,6 +69,38 @@ app.post("/api/products", async (_req, res) => {
   res.status(status).send({ success: status === 200, error });
 });
 
+app.post("/api/discounts/setup-metafields", async (_req, res) => {
+  try {
+    const client = new shopify.api.clients.Graphql({
+      session: res.locals.shopify.session,
+    });
+
+    const response = await client.request(`
+      mutation {
+        metafieldDefinitionCreate(definition: {
+          name: "Grupo de Precio"
+          namespace: "custom"
+          key: "price_group"
+          type: "integer"
+          ownerType: PRODUCT
+        }) {
+          createdDefinition { id }
+          userErrors { message }
+        }
+      }
+    `);
+
+    const errors = response.data.metafieldDefinitionCreate.userErrors;
+    if (errors && errors.length > 0 && !errors[0].message.includes("already exists")) {
+      return res.status(400).send({ success: false, error: errors[0].message });
+    }
+
+    res.status(200).send({ success: true, message: "Metafield configurado correctamente." });
+  } catch (e) {
+    res.status(500).send({ success: false, error: e.message });
+  }
+});
+
 app.post("/api/discounts/configure", async (req, res) => {
   try {
     const { minItems } = req.body;

@@ -78,27 +78,34 @@ export default function HomePage() {
                 <Divider />
                 
                 <Text as="h3" variant="headingMd" fontWeight="semibold">
-                  1. Configurar los Grupos
+                  1. Configurar Grupos Automáticamente
                 </Text>
                 <Text as="p" variant="bodyMd" color="subdued">
-                  Para que el motor sepa qué productos van juntos, hacé esto:
-                  <ol style={{ marginTop: "10px", paddingLeft: "20px" }}>
-                    <li>Andá a <b>Configuración</b> (abajo a la izquierda en tu Shopify).</li>
-                    <li>Buscá <b>Datos personalizados</b> y hacé clic en <b>Productos</b>.</li>
-                    <li>Dale a <b>Agregar definición</b>.</li>
-                    <li>En nombre poné: <code style={{background: "#f4f6f8", padding: "2px 4px"}}>Grupo de Precio</code>.</li>
-                    <li>En Namespace y clave pegá esto: <code style={{background: "#f4f6f8", padding: "2px 4px"}}>custom.price_group</code>.</li>
-                    <li>Elegí el tipo: <b>Número entero</b> (Integer).</li>
-                  </ol>
-                  ¡Listo! Ahora en cada producto te va a aparecer un campo al final para ponerles un número (ej: todos los del grupo 1 tendrán el mismo precio).
+                  No hace falta que busques nada en la configuración. Hacé clic acá y nosotros 
+                  creamos el campo "Grupo de Precio" por vos en todos tus productos.
                 </Text>
+                <div style={{ marginTop: "10px" }}>
+                  <Button 
+                    outline 
+                    onClick={async () => {
+                      try {
+                        const res = await fetch("/api/discounts/setup-metafields", { method: "POST" });
+                        const data = await res.json();
+                        alert(data.success ? "¡Listo! Ya podés ir a tus productos y vas a ver el campo 'Grupo de Precio' al final." : data.error);
+                      } catch (e) {
+                        alert("Error de red.");
+                      }
+                    }}
+                  >
+                    Configurar Campo en Productos
+                  </Button>
+                </div>
 
                 <Text as="h3" variant="headingMd" fontWeight="semibold" style={{ marginTop: "12px" }}>
-                  2. Guardar Configuración
+                  2. Guardar y Activar Motor
                 </Text>
                 <Text as="p" variant="bodyMd" color="subdued">
-                  Ajusta los parámetros en el panel de la derecha y haz clic en guardar. 
-                  El motor se actualizará automáticamente con tus preferencias.
+                  Ajusta el mínimo de ítems en el panel de la derecha y dale a "Guardar".
                 </Text>
               </Stack>
             </div>
