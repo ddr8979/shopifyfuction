@@ -54,16 +54,8 @@ export default function HomePage() {
         {/* Header Section */}
         <div style={{ textAlign: "center", marginBottom: "40px", marginTop: "20px" }}>
           <Text as="h1" variant="heading3xl" fontWeight="bold">
-            Discount Engine
+            MOTOR DE DESCUENTOS INTELIGENTES
           </Text>
-          <div style={{ marginTop: "8px" }}>
-            <Badge tone="success">Active</Badge>
-          </div>
-          <div style={{ marginTop: "16px" }}>
-            <Text as="p" variant="bodySm" color="subdued" fontWeight="semibold" style={{ letterSpacing: "1px" }}>
-              POWERED BY SEC
-            </Text>
-          </div>
         </div>
 
         <Layout>
@@ -174,8 +166,8 @@ export default function HomePage() {
         
         {/* Footer */}
         <div style={{ textAlign: "center", marginTop: "40px", opacity: 0.6 }}>
-          <Text as="p" variant="bodyXs">
-            Diseñado con precisión. Un producto de SEC.
+          <Text as="p" variant="bodyXs" fontWeight="bold" style={{ letterSpacing: "1px" }}>
+            POWERED BY SEC
           </Text>
         </div>
 
