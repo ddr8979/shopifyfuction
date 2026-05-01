@@ -78,12 +78,19 @@ export default function HomePage() {
                 <Divider />
                 
                 <Text as="h3" variant="headingMd" fontWeight="semibold">
-                  1. Configurar los Productos
+                  1. Configurar los Grupos
                 </Text>
                 <Text as="p" variant="bodyMd" color="subdued">
-                  En tu panel de Shopify, ve a <b>Configuración &gt; Datos personalizados &gt; Productos</b> y crea 
-                  un metafield con el Namespace y Key exactos: <code style={{background: "#f4f6f8", padding: "2px 6px", borderRadius: "4px"}}>custom.price_group</code>. 
-                  El tipo debe ser <b>Número entero</b>. Luego, asígnale un valor a los productos que quieras agrupar.
+                  Para que el motor sepa qué productos van juntos, hacé esto:
+                  <ol style={{ marginTop: "10px", paddingLeft: "20px" }}>
+                    <li>Andá a <b>Configuración</b> (abajo a la izquierda en tu Shopify).</li>
+                    <li>Buscá <b>Datos personalizados</b> y hacé clic en <b>Productos</b>.</li>
+                    <li>Dale a <b>Agregar definición</b>.</li>
+                    <li>En nombre poné: <code style={{background: "#f4f6f8", padding: "2px 4px"}}>Grupo de Precio</code>.</li>
+                    <li>En Namespace y clave pegá esto: <code style={{background: "#f4f6f8", padding: "2px 4px"}}>custom.price_group</code>.</li>
+                    <li>Elegí el tipo: <b>Número entero</b> (Integer).</li>
+                  </ol>
+                  ¡Listo! Ahora en cada producto te va a aparecer un campo al final para ponerles un número (ej: todos los del grupo 1 tendrán el mismo precio).
                 </Text>
 
                 <Text as="h3" variant="headingMd" fontWeight="semibold" style={{ marginTop: "12px" }}>
