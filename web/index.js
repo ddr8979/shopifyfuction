@@ -20,7 +20,7 @@ const STATIC_PATH =
 
 const app = express();
 
-// Set up Shopify authentication and webhook handling
+// Configurar autenticación de Shopify y manejo de webhooks
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
   shopify.config.auth.callbackPath,
@@ -32,8 +32,8 @@ app.post(
   shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers })
 );
 
-// If you are adding routes outside of the /api path, remember to
-// also add a proxy rule for them in web/frontend/vite.config.js
+// Si agregas rutas fuera de la ruta /api, recuerda
+// agregar también una regla de proxy para ellas en web/frontend/vite.config.js
 
 app.use("/api/*", shopify.validateAuthenticatedSession());
 

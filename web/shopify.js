@@ -5,11 +5,11 @@ import { restResources } from "@shopify/shopify-api/rest/admin/2024-10";
 
 const DB_PATH = `${process.cwd()}/database.sqlite`;
 
-// The transactions with Shopify will always be marked as test transactions, unless NODE_ENV is production.
-// See the ensureBilling helper to learn more about billing in this template.
+// Las transacciones con Shopify siempre se marcarán como de prueba, a menos que NODE_ENV sea "production".
+// Consulta la documentación de Shopify para aprender más sobre facturación.
 const billingConfig = {
-  "My Shopify One-Time Charge": {
-    // This is an example configuration that would do a one-time charge for $5 (only USD is currently supported)
+  "Cargo Único de Shopify": {
+    // Esta es una configuración de ejemplo para un cargo único de $5 (solo se admite USD actualmente)
     amount: 5.0,
     currencyCode: "USD",
     interval: BillingInterval.OneTime,
@@ -27,7 +27,7 @@ const shopify = shopifyApp({
       lineItemBilling: true,
       unstable_managedPricingSupport: true,
     },
-    billing: undefined, // or replace with billingConfig above to enable example billing
+    billing: undefined, // O reemplazalo con 'billingConfig' arriba para habilitar la facturación de ejemplo
   },
   auth: {
     path: "/api/auth",
@@ -36,7 +36,7 @@ const shopify = shopifyApp({
   webhooks: {
     path: "/api/webhooks",
   },
-  // This should be replaced with your preferred storage strategy
+  // Esto debería reemplazarse con tu estrategia de almacenamiento de base de datos preferida (PostgreSQL, Redis, etc.)
   sessionStorage: new SQLiteSessionStorage(DB_PATH),
 });
 
