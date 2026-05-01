@@ -1,8 +1,8 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "e62e00a966f010b42f6b544cc3dd80a2"
+client_id = "6a4999b35af564fddb4c2a05ff9c630a"
 name = "Motor de Descuentos"
-application_url = "https://example.com"
+application_url = "https://shopifyfuction.onrender.com"
 embedded = true
 
 [access_scopes]
@@ -13,7 +13,7 @@ scopes = "write_products,write_discounts"
 api_version = "2026-04"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://shopifyfuction.onrender.com/api/auth/callback" ]
 
 [build]
 automatically_update_urls_on_dev = true
