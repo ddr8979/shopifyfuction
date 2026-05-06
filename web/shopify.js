@@ -1,5 +1,4 @@
-process.env.SHOPIFY_API_KEY = "453defce94a9dad60b538662ac63dde5";
-process.env.SHOPIFY_API_SECRET = Buffer.from("c2hwc3NfYzg4YzZjOWY2YWRjMWZlOWU5OGUxOTBkMTRkZDA2Nzg=", "base64").toString("utf-8");
+
 import { BillingInterval, LATEST_API_VERSION } from "@shopify/shopify-api";
 import { shopifyApp } from "@shopify/shopify-app-express";
 import { SQLiteSessionStorage } from "@shopify/shopify-app-session-storage-sqlite";
@@ -22,7 +21,9 @@ const shopify = shopifyApp({
   api: {
     apiVersion: LATEST_API_VERSION,
     restResources,
-    scopes: (process.env.SCOPES || "write_products,write_discounts").split(","),
+    apiKey: "453defce94a9dad60b538662ac63dde5",
+    apiSecretKey: Buffer.from("c2hwc3NfYzg4YzZjOWY2YWRjMWZlOWU5OGUxOTBkMTRkZDA2Nzg=", "base64").toString("utf-8"),
+    scopes: (process.env.SCOPES || "read_products,write_products,read_discounts,write_discounts").split(","),
     hostName: process.env.HOST ? process.env.HOST.replace("https://", "").replace("http://", "") : "shopifyfuction.onrender.com",
     future: {
       customerAddressDefaultFix: true,
