@@ -20,6 +20,29 @@ const STATIC_PATH =
 
 const app = express();
 
+function shopFromHostParam(hostParam) {
+  if (!hostParam) return null;
+  try {
+    const decoded = Buffer.from(String(hostParam), "base64").toString("utf8");
+    // Usually: "<shop>.myshopify.com/admin"
+    const shop = decoded.split("/")[0];
+    if (!shop || !shop.includes(".myshopify.com")) return null;
+    return shop;
+  } catch {
+    return null;
+  }
+}
+
+// En algunos contextos Shopify envía `host` pero no `shop`.
+// Para no quedar en "No shop provided", inferimos `shop` desde `host`.
+app.use((req, _res, next) => {
+  if (req?.query && !req.query.shop && req.query.host) {
+    const inferredShop = shopFromHostParam(req.query.host);
+    if (inferredShop) req.query.shop = inferredShop;
+  }
+  next();
+});
+
 // Configurar autenticación de Shopify y manejo de webhooks
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
