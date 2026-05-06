@@ -9,7 +9,7 @@ import {
   Divider,
 } from "@shopify/polaris";
 import { InfoMinor, SettingsMajor } from "@shopify/polaris-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const [isActivating, setIsActivating] = useState(false);
@@ -17,6 +17,33 @@ export default function HomePage() {
   const [minItems, setMinItems] = useState("2");
   const [isApplyingPromos, setIsApplyingPromos] = useState(false);
   const [isSetupAll, setIsSetupAll] = useState(false);
+  const [setupStatus, setSetupStatus] = useState(null);
+  const [setupStatusError, setSetupStatusError] = useState(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+
+  const loadSetupStatus = async () => {
+    setIsLoadingStatus(true);
+    setSetupStatusError(null);
+    try {
+      const res = await fetch("/api/setup/status");
+      const data = await res.json();
+      if (!data.success) {
+        setSetupStatusError(data.error || "Error leyendo status.");
+        setSetupStatus(null);
+        return;
+      }
+      setSetupStatus(data.status);
+    } catch (e) {
+      setSetupStatusError("Error de red leyendo status.");
+      setSetupStatus(null);
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSetupStatus();
+  }, []);
 
   const handleActivate = async () => {
     setIsActivating(true);
@@ -90,6 +117,7 @@ export default function HomePage() {
       const ok = (data.promoResults || []).filter((r) => r.ok).length;
       const fail = (data.promoResults || []).filter((r) => !r.ok).length;
       alert(`TODO LISTO. Promos OK: ${ok}. Errores: ${fail}. ${data.discount?.message || ""}`);
+      loadSetupStatus();
     } catch (e) {
       alert("Error de red al hacer la configuración completa.");
     } finally {
@@ -158,6 +186,40 @@ export default function HomePage() {
                     Configurar Campo en Productos
                   </Button>
                 </div>
+
+                <Divider />
+
+                <Text as="h3" variant="headingMd" fontWeight="semibold">
+                  Estado (debug)
+                </Text>
+                <Text as="p" variant="bodyMd" color="subdued">
+                  Esto te dice si el deploy está bien y qué parte está faltando.
+                </Text>
+                <div style={{ marginTop: "10px" }}>
+                  <Button outline loading={isLoadingStatus} onClick={loadSetupStatus}>
+                    Actualizar estado
+                  </Button>
+                </div>
+                {setupStatusError && (
+                  <div style={{ marginTop: "12px", padding: "12px", borderRadius: "8px", background: "#fbeae5", color: "#d82c0d" }}>
+                    <Text as="p" variant="bodyMd" fontWeight="semibold">
+                      {setupStatusError}
+                    </Text>
+                  </div>
+                )}
+                {setupStatus && (
+                  <div style={{ marginTop: "12px", padding: "12px", borderRadius: "8px", background: "#f6f6f7" }}>
+                    <Text as="p" variant="bodySm" fontWeight="semibold">
+                      Metafields: price_group={String(setupStatus.metafields?.price_group)} · price_group_qty={String(setupStatus.metafields?.price_group_qty)}
+                    </Text>
+                    <Text as="p" variant="bodySm" fontWeight="semibold">
+                      Descuento: exists={String(setupStatus.discount?.exists)}{setupStatus.discount?.status ? ` · status=${setupStatus.discount.status}` : ""}
+                    </Text>
+                    <Text as="p" variant="bodySm" fontWeight="semibold">
+                      Colecciones OK: {(setupStatus.collections || []).filter((c) => c.ok).length}/5
+                    </Text>
+                  </div>
+                )}
 
                 <Divider />
 

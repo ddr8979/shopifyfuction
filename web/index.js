@@ -384,6 +384,75 @@ async function ensureAutomaticDiscount(client, { minItems }) {
   return { created: true, message: "Descuento automático creado y activado." };
 }
 
+async function getPromoSetupStatus(client) {
+  const response = await client.request(
+    `
+      query PromoSetupStatus($handles: [String!]!) {
+        metafieldDefinitions(first: 50, ownerType: PRODUCT, namespace: "custom") {
+          nodes { key type name }
+        }
+        discountNodes(first: 50) {
+          nodes {
+            id
+            discount {
+              __typename
+              ... on DiscountAutomaticApp {
+                title
+                status
+              }
+            }
+          }
+        }
+        collectionsByHandle: nodes(ids: []) { id }
+        collections: collections(first: 1) { nodes { id } }
+        c1: collectionByHandle(handle: $handles[0]) { id handle title }
+        c2: collectionByHandle(handle: $handles[1]) { id handle title }
+        c3: collectionByHandle(handle: $handles[2]) { id handle title }
+        c4: collectionByHandle(handle: $handles[3]) { id handle title }
+        c5: collectionByHandle(handle: $handles[4]) { id handle title }
+      }
+    `,
+    {
+      variables: {
+        handles: ["2x1200", "2x1500-1", "2x2000-calzado", "2x2500-calzado", "2x3000"],
+      },
+    }
+  );
+
+  const defs = response?.data?.metafieldDefinitions?.nodes || [];
+  const hasPriceGroup = defs.some((d) => d.key === "price_group");
+  const hasQty = defs.some((d) => d.key === "price_group_qty");
+
+  const discounts = (response?.data?.discountNodes?.nodes || [])
+    .map((n) => n.discount)
+    .filter(Boolean);
+  const secDiscount = discounts.find(
+    (d) => d.__typename === "DiscountAutomaticApp" && d.title === "Descuento Inteligente (SEC)"
+  );
+
+  const collections = [
+    response?.data?.c1,
+    response?.data?.c2,
+    response?.data?.c3,
+    response?.data?.c4,
+    response?.data?.c5,
+  ];
+
+  return {
+    metafields: {
+      price_group: hasPriceGroup,
+      price_group_qty: hasQty,
+      foundKeys: defs.map((d) => d.key),
+    },
+    discount: secDiscount
+      ? { exists: true, status: secDiscount.status }
+      : { exists: false },
+    collections: collections.map((c) =>
+      c?.id ? { ok: true, handle: c.handle, title: c.title } : { ok: false }
+    ),
+  };
+}
+
 // Automatiza el "cargar metafields" desde colecciones (links) para evitar hacerlo producto por producto.
 app.post("/api/promos/apply-from-collections", async (req, res) => {
   try {
@@ -429,6 +498,18 @@ app.post("/api/setup-all", async (req, res) => {
       promoResults,
       discount: discountResult,
     });
+  } catch (e) {
+    res.status(500).send({ success: false, error: e.message });
+  }
+});
+
+app.get("/api/setup/status", async (_req, res) => {
+  try {
+    const client = new shopify.api.clients.Graphql({
+      session: res.locals.shopify.session,
+    });
+    const status = await getPromoSetupStatus(client);
+    res.status(200).send({ success: true, status });
   } catch (e) {
     res.status(500).send({ success: false, error: e.message });
   }
