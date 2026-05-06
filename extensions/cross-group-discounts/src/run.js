@@ -29,6 +29,19 @@ const CANTIDAD_MINIMA_DEFAULT = 2;
  */
 export function run(input) {
   const lineas = input.cart.lines;
+  
+  let minItems = CANTIDAD_MINIMA_DEFAULT;
+  const configMetafield = input.discountNode?.metafield?.value;
+  if (configMetafield) {
+    try {
+      const parsedConfig = JSON.parse(configMetafield);
+      if (parsedConfig.minItems) {
+        minItems = parseInt(parsedConfig.minItems, 10);
+      }
+    } catch (e) {
+      // Ignore parse errors, fallback to default
+    }
+  }
 
   // Recolectar líneas con metafield de grupo válido
   const lineasConGrupo = [];
@@ -63,9 +76,9 @@ export function run(input) {
   // Sin ítems con grupo válido → nada que hacer
   if (lineasConGrupo.length === 0) return SIN_DESCUENTO;
 
-  // Necesitamos al menos 2 ítems elegibles en total
+  // Necesitamos al menos X ítems elegibles en total
   const totalItems = lineasConGrupo.reduce((acc, { linea }) => acc + linea.quantity, 0);
-  if (totalItems < CANTIDAD_MINIMA_DEFAULT) return SIN_DESCUENTO;
+  if (totalItems < minItems) return SIN_DESCUENTO;
 
   const hayCruce = gruposDetectados.size > 1;
   const precioObjetivo = maxPrecioUnitario;

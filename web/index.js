@@ -45,10 +45,11 @@ app.use((req, _res, next) => {
     if (inferredShop) req.query.shop = inferredShop;
   }
   // Fallback para acceso directo al dominio (sin shop/host).
-  // Esto permite dejar Kaotiko "listo" aunque el usuario abra la URL sin params.
+  // Solo aplicamos DEFAULT_SHOP si existe explícitamente en env variables.
   if (req?.query && !req.query.shop && !req.query.host) {
-    const defaultShop = process.env.DEFAULT_SHOP || "kaoticouy.myshopify.com";
-    req.query.shop = defaultShop;
+    if (process.env.DEFAULT_SHOP) {
+      req.query.shop = process.env.DEFAULT_SHOP;
+    }
   }
   next();
 });
@@ -76,8 +77,8 @@ app.get(
       ]);
       await ensureAutomaticDiscount(client, { minItems: 2 });
     } catch (e) {
-      // No bloqueamos la instalación/redirect si algo falla.
-      console.log(`Auto-setup failed: ${e.message}`);
+      // Log the full stack trace instead of swallowing
+      console.error(`Auto-setup failed:`, e);
     }
     next();
   },
@@ -360,12 +361,13 @@ async function applyPromosFromCollections(client, promos) {
 async function ensureAutomaticDiscount(client, { minItems }) {
   const functionsResponse = await client.request(
     `
-      query { shopifyFunctions(first: 10) { nodes { id apiType } } }
+      query { shopifyFunctions(first: 10) { nodes { id apiType title handle } } }
     `
   );
 
   const ourFunction = functionsResponse.data.shopifyFunctions.nodes.find(
-    (f) => f.apiType === "product_discounts"
+    (f) => f.apiType === "product_discounts" && 
+           (f.title?.toLowerCase().includes("cross-group") || f.handle?.toLowerCase().includes("cross-group"))
   );
   if (!ourFunction) throw new Error("Shopify Function no encontrada.");
 
@@ -532,7 +534,8 @@ app.post("/api/setup-all", async (req, res) => {
       discount: discountResult,
     });
   } catch (e) {
-    res.status(500).send({ success: false, error: e.message });
+    console.error(`Setup-all failed:`, e);
+    res.status(500).send({ success: false, error: e.message, stack: e.stack });
   }
 });
 

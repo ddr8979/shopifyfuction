@@ -1,13 +1,13 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "32ad0aa8607cfd52711b70bec5b98030"
+client_id = "453defce94a9dad60b538662ac63dde5"
 name = "Motor de Descuentos"
 application_url = "https://shopifyfuction.onrender.com"
 embedded = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,write_discounts"
+scopes = "read_products,write_products,read_discounts,write_discounts"
 
 [webhooks]
 api_version = "2026-04"

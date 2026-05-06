@@ -1,4 +1,9 @@
 query Input {
+  discountNode {
+    metafield(namespace: "$app:cross_group_discounts", key: "function-configuration") {
+      value
+    }
+  }
   cart {
     lines {
       id
