@@ -23,7 +23,11 @@ const app = express();
 function shopFromHostParam(hostParam) {
   if (!hostParam) return null;
   try {
-    const decoded = Buffer.from(String(hostParam), "base64").toString("utf8");
+    const raw = decodeURIComponent(String(hostParam));
+    // Shopify suele enviar `host` en base64url (usa - y _), no siempre base64 clásico.
+    let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4 !== 0) b64 += "=";
+    const decoded = Buffer.from(b64, "base64").toString("utf8");
     // Usually: "<shop>.myshopify.com/admin"
     const shop = decoded.split("/")[0];
     if (!shop || !shop.includes(".myshopify.com")) return null;
