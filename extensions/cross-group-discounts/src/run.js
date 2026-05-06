@@ -1,142 +1,102 @@
 /**
  * @typedef {import("../generated/api").RunInput} RunInput
  * @typedef {import("../generated/api").FunctionRunResult} FunctionRunResult
- * @typedef {import("../generated/api").Target} Target
  */
 
-/**
- * @type {FunctionRunResult}
- */
-const EMPTY_DISCOUNT = {
+// Devuelto cuando no hay condiciones para aplicar descuento
+const SIN_DESCUENTO = {
   discountApplicationStrategy: "FIRST",
   discounts: [],
 };
 
+// Cantidad mínima de ítems para activar la promo (default 2 si no hay metafield)
+const CANTIDAD_MINIMA_DEFAULT = 2;
+
 /**
+ * Lógica principal — evaluada por Shopify en cada cambio del carrito
+ *
+ * Regla de negocio:
+ *   - Si el carrito tiene ítems de distintos grupos de precio,
+ *     todos los ítems elegibles pagan el precio unitario del grupo más caro.
+ *   - Si todos son del mismo grupo, pagan el precio normal de ese grupo.
+ *
+ * Configuración en productos (vía metafields):
+ *   - custom.price_group     → número: precio total del grupo (ej: 2000 para "2x2000")
+ *   - custom.price_group_qty → número: cantidad mínima del grupo (ej: 2, default si no existe)
+ *
  * @param {RunInput} input
  * @returns {FunctionRunResult}
  */
 export function run(input) {
-  // Configuración dinámica (parametrizable con un par de clics desde el panel)
-  const configMetafield = input.discountNode?.metafield?.value;
-  const config = configMetafield ? JSON.parse(configMetafield) : {
-    minItems: 2, // Por defecto requiere 2 items
-  };
+  const lineas = input.cart.lines;
 
-  // 1. Filtrar las líneas que son productos y tienen el metafield de grupo de precio
-  const validLines = input.cart.lines.filter(line => {
-    if (line.merchandise.__typename !== "ProductVariant") return false;
-    const metafield = line.merchandise.product.priceGroup;
-    return metafield && metafield.value;
-  });
+  // Recolectar líneas con metafield de grupo válido
+  const lineasConGrupo = [];
+  let maxPrecioUnitario = 0;
+  const gruposDetectados = new Set();
 
-  if (validLines.length < config.minItems) {
-    return EMPTY_DISCOUNT;
-  }
+  for (const linea of lineas) {
+    if (linea.merchandise.__typename !== "ProductVariant") continue;
 
-  // 2. Agrupar por el valor numérico de price_group
-  const groups = {};
-  let totalValidItems = 0;
-  let maxPriceValue = 0;
+    const metaGrupo = linea.merchandise.product.grupoPromo;
+    const metaCantidad = linea.merchandise.product.cantidadGrupo;
 
-  validLines.forEach(line => {
-    const groupValue = parseFloat(line.merchandise.product.priceGroup.value);
-    if (!isNaN(groupValue)) {
-      if (!groups[groupValue]) {
-        groups[groupValue] = [];
-      }
-      groups[groupValue].push(line);
-      totalValidItems += line.quantity;
-      if (groupValue > maxPriceValue) {
-        maxPriceValue = groupValue;
-      }
+    if (!metaGrupo?.value) continue; // sin metafield → producto fuera de la promo
+
+    const precioTotal = parseFloat(metaGrupo.value);
+    if (isNaN(precioTotal) || precioTotal <= 0) continue;
+
+    const cantidad = metaCantidad?.value
+      ? parseInt(metaCantidad.value, 10)
+      : CANTIDAD_MINIMA_DEFAULT;
+
+    const precioUnitario = precioTotal / cantidad;
+
+    lineasConGrupo.push({ linea, precioTotal, precioUnitario });
+    gruposDetectados.add(precioTotal);
+
+    if (precioUnitario > maxPrecioUnitario) {
+      maxPrecioUnitario = precioUnitario;
     }
-  });
-
-  // Si no se agruparon la cantidad mínima de ítems válidos
-  if (totalValidItems < config.minItems) {
-    return EMPTY_DISCOUNT;
   }
 
-  // 3. Crear los targets de descuento
-  // "Aplica un descuento... para que el precio final unitario... coincida con el valor del grupo más caro"
-  const targets = [];
-  
-  validLines.forEach(line => {
-    const currentPrice = parseFloat(line.cost.amountPerQuantity.amount);
-    
-    // Solo aplicamos si el precio actual difiere del precio del grupo más caro.
-    // OJO: Si la consigna es cobrarle "maxPriceValue" como tarifa fija a TODOS:
-    if (currentPrice !== maxPriceValue) {
-      targets.push({
-        cartLine: {
-          id: line.id
-        }
-      });
-    }
-  });
+  // Sin ítems con grupo válido → nada que hacer
+  if (lineasConGrupo.length === 0) return SIN_DESCUENTO;
 
-  if (targets.length === 0) {
-    return EMPTY_DISCOUNT;
-  }
+  // Necesitamos al menos 2 ítems elegibles en total
+  const totalItems = lineasConGrupo.reduce((acc, { linea }) => acc + linea.quantity, 0);
+  if (totalItems < CANTIDAD_MINIMA_DEFAULT) return SIN_DESCUENTO;
 
-  // Se aplica un descuento FIXED_AMOUNT por ítem
-  // La API permite descuentos "FIXED_AMOUNT" o "PERCENTAGE".
-  // Si queremos que cada ítem tenga un precio fijo, podemos usar un FIXED_AMOUNT por ítem si descontamos la diferencia.
-  // La API no permite descuentos variables por ítem en un solo FixedAmount a menos que emitamos múltiples descuentos.
-  // Según la regla: "para que el precio final unitario coincida con el valor del grupo más caro".
-  // Esto significa que el descuento será (currentPrice - maxPriceValue).
-  // Emitiremos descuentos individuales por cada objetivo.
-  
-  const discounts = validLines.map(line => {
-    const currentPrice = parseFloat(line.cost.amountPerQuantity.amount);
-    if (currentPrice > maxPriceValue) {
-      // Disminuimos el precio para que coincida.
-      const discountValue = currentPrice - maxPriceValue;
-      return {
-        targets: [
-          {
-            cartLine: {
-              id: line.id
-            }
-          }
-        ],
-        value: {
-          fixedAmount: {
-            amount: discountValue.toString(),
-            appliesToEachItem: true
-          }
+  const hayCruce = gruposDetectados.size > 1;
+  const precioObjetivo = maxPrecioUnitario;
+
+  // Calcular descuento por línea: diferencia entre precio base y precio objetivo
+  const descuentos = lineasConGrupo.map(({ linea, precioTotal }) => {
+    const precioBase = parseFloat(linea.cost.amountPerQuantity.amount);
+    // Precio objetivo: siempre el del grupo más caro (si hay cruce o no)
+    const diferencia = precioBase - precioObjetivo;
+
+    // No podemos subir precios — solo descontamos si el precio base es mayor
+    if (diferencia <= 0) return null;
+
+    return {
+      targets: [{ cartLine: { id: linea.id } }],
+      value: {
+        fixedAmount: {
+          amount: diferencia.toFixed(2),
+          appliesToEachItem: true,
         },
-        message: `Ajuste de precio cruzado`
-      };
-    } else if (currentPrice < maxPriceValue) {
-      // No es posible aplicar un descuento "negativo" para aumentar el precio en Shopify.
-      // Por lo tanto, si el precio es menor que el del grupo más caro, no podemos subirlo mediante un descuento.
-      // Asumiendo que "price_group" define el grupo de tarifa objetivo.
-      // Solo emitiremos descuentos válidos mayores a 0.
-      const discountValue = currentPrice - maxPriceValue;
-      if (discountValue > 0) {
-          return {
-            targets: [{ cartLine: { id: line.id } }],
-            value: {
-              fixedAmount: {
-                amount: discountValue.toString(),
-                appliesToEachItem: true
-              }
-            },
-            message: `Ajuste de precio cruzado`
-          };
-      }
-    }
-    return null;
+      },
+      message: hayCruce
+        ? `Promo cruzada: 2x${Math.round(maxPrecioUnitario * 2)}`
+        : `Promo 2x${Math.round(precioTotal)}`,
+    };
   }).filter(Boolean);
 
-  if (discounts.length === 0) {
-      return EMPTY_DISCOUNT;
-  }
+  if (descuentos.length === 0) return SIN_DESCUENTO;
 
   return {
     discountApplicationStrategy: "MAXIMUM",
-    discounts: discounts
+    discounts: descuentos,
   };
 }

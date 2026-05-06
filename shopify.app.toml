@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "6a4999b35af564fddb4c2a05ff9c630a"
+client_id = "32ad0aa8607cfd52711b70bec5b98030"
 name = "Motor de Descuentos"
 application_url = "https://shopifyfuction.onrender.com"
 embedded = true

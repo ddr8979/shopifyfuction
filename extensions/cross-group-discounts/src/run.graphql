@@ -15,17 +15,19 @@ query Input {
           id
           product {
             id
-            priceGroup: metafield(namespace: "custom", key: "price_group") {
+            # Grupo de precio: valor total de la promo (ej: 2000 para "2x2000")
+            # Asignar en: Admin → Productos → [producto] → Metafields → custom.price_group
+            grupoPromo: metafield(namespace: "custom", key: "price_group") {
+              value
+            }
+            # Cantidad mínima de ítems del grupo (opcional, default 2)
+            # Asignar en: Admin → Productos → [producto] → Metafields → custom.price_group_qty
+            cantidadGrupo: metafield(namespace: "custom", key: "price_group_qty") {
               value
             }
           }
         }
       }
-    }
-  }
-  discountNode {
-    metafield(namespace: "$app:cross_group_discounts", key: "function-configuration") {
-      value
     }
   }
 }

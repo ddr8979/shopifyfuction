@@ -1,16 +1,12 @@
 api_version = "2026-04"
-uid = "9914f07e-a566-2496-235a-116d014311a2491dccbb"
+uid = "1b613333-a7cd-47f7-b41e-b13740e3d815"
 
 [[extensions]]
 name = "Descuento por cruce de grupos de precio"
 handle = "cross-group-discounts"
 type = "product_discounts"
-description = "Descuento por cruce de grupos de precio"
+description = "Aplica el precio del grupo mas caro cuando se mezclan grupos de promo"
 
 [extensions.build]
 command = ""
 path = "dist/function.wasm"
-
-[extensions.ui.paths]
-create = "/"
-details = "/"

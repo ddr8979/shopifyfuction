@@ -15,6 +15,8 @@ export default function HomePage() {
   const [isActivating, setIsActivating] = useState(false);
   const [activationResult, setActivationResult] = useState(null);
   const [minItems, setMinItems] = useState("2");
+  const [isApplyingPromos, setIsApplyingPromos] = useState(false);
+  const [isSetupAll, setIsSetupAll] = useState(false);
 
   const handleActivate = async () => {
     setIsActivating(true);
@@ -36,6 +38,62 @@ export default function HomePage() {
       setActivationResult({ type: "error", message: "Error de red al activar el descuento." });
     } finally {
       setIsActivating(false);
+    }
+  };
+
+  const handleApplyPromosFromCollections = async () => {
+    setIsApplyingPromos(true);
+    try {
+      const promos = [
+        { collection: "2x1200", priceGroup: 1200, qty: 2 },
+        { collection: "2x1500-1", priceGroup: 1500, qty: 2 },
+        { collection: "2x2000-calzado", priceGroup: 2000, qty: 2 },
+        { collection: "2x2500-calzado", priceGroup: 2500, qty: 2 },
+        { collection: "2x3000", priceGroup: 3000, qty: 2 },
+      ];
+
+      const res = await fetch("/api/promos/apply-from-collections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ promos }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || "Error al aplicar promos.");
+        return;
+      }
+
+      const ok = (data.results || []).filter((r) => r.ok).length;
+      const fail = (data.results || []).filter((r) => !r.ok).length;
+      alert(`Listo. OK: ${ok}. Errores: ${fail}.`);
+    } catch (e) {
+      alert("Error de red al aplicar promos.");
+    } finally {
+      setIsApplyingPromos(false);
+    }
+  };
+
+  const handleSetupAll = async () => {
+    setIsSetupAll(true);
+    try {
+      const res = await fetch("/api/setup-all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ minItems: parseInt(minItems, 10) || 2 }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || "Error al hacer la configuración completa.");
+        return;
+      }
+
+      const ok = (data.promoResults || []).filter((r) => r.ok).length;
+      const fail = (data.promoResults || []).filter((r) => !r.ok).length;
+      alert(`TODO LISTO. Promos OK: ${ok}. Errores: ${fail}. ${data.discount?.message || ""}`);
+    } catch (e) {
+      alert("Error de red al hacer la configuración completa.");
+    } finally {
+      setIsSetupAll(false);
     }
   };
 
@@ -98,6 +156,43 @@ export default function HomePage() {
                     }}
                   >
                     Configurar Campo en Productos
+                  </Button>
+                </div>
+
+                <Divider />
+
+                <Text as="h3" variant="headingMd" fontWeight="semibold">
+                  1c. TODO listo (recomendado)
+                </Text>
+                <Text as="p" variant="bodyMd" color="subdued">
+                  Hace todo junto: crea los metafields, aplica las promos por colecciones y activa el motor.
+                </Text>
+                <div style={{ marginTop: "10px" }}>
+                  <Button
+                    primary
+                    loading={isSetupAll}
+                    onClick={handleSetupAll}
+                  >
+                    Hacer Todo Listo
+                  </Button>
+                </div>
+
+                <Divider />
+
+                <Text as="h3" variant="headingMd" fontWeight="semibold">
+                  1b. Cargar Promos desde Colecciones (Kaotiko)
+                </Text>
+                <Text as="p" variant="bodyMd" color="subdued">
+                  Esto toma las colecciones 2x1200/1500/2000/2500/3000 y asigna el metafield
+                  a todos los productos automáticamente.
+                </Text>
+                <div style={{ marginTop: "10px" }}>
+                  <Button
+                    primary
+                    loading={isApplyingPromos}
+                    onClick={handleApplyPromosFromCollections}
+                  >
+                    Aplicar Promos por Colecciones
                   </Button>
                 </div>
 
