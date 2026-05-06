@@ -44,6 +44,12 @@ app.use((req, _res, next) => {
     const inferredShop = shopFromHostParam(req.query.host);
     if (inferredShop) req.query.shop = inferredShop;
   }
+  // Fallback para acceso directo al dominio (sin shop/host).
+  // Esto permite dejar Kaotiko "listo" aunque el usuario abra la URL sin params.
+  if (req?.query && !req.query.shop && !req.query.host) {
+    const defaultShop = process.env.DEFAULT_SHOP || "kaoticouy.myshopify.com";
+    req.query.shop = defaultShop;
+  }
   next();
 });
 
