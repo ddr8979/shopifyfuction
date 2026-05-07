@@ -368,13 +368,14 @@ async function applyPromosFromCollections(client, promos) {
 async function ensureAutomaticDiscount(client, { minItems }) {
   const functionsResponse = await client.request(
     `
-      query { shopifyFunctions(first: 10) { nodes { id apiType title handle } } }
+      query { shopifyFunctions(first: 10) { nodes { id apiType title handle app { title } } } }
     `
   );
 
   const ourFunction = functionsResponse.data.shopifyFunctions.nodes.find(
     (f) => f.apiType === "product_discounts" && 
-           (f.title?.toLowerCase().includes("cross-group") || f.handle?.toLowerCase().includes("cross-group"))
+           (f.title?.toLowerCase().includes("cross-group") || f.handle?.toLowerCase().includes("cross-group")) &&
+           f.app?.title?.includes("SEC")
   );
   if (!ourFunction) throw new Error("Shopify Function no encontrada.");
 
