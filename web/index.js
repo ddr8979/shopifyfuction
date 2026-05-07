@@ -375,7 +375,7 @@ async function ensureAutomaticDiscount(client, { minItems }) {
       mutation CreateAutoDiscount($functionId: String!, $startsAt: DateTime!, $value: String!) {
         discountAutomaticAppCreate(
           automaticAppDiscount: {
-            title: "Descuento Inteligente SEC V2"
+            title: "Descuento Inteligente SEC V3"
             functionId: $functionId
             startsAt: $startsAt
             metafields: [

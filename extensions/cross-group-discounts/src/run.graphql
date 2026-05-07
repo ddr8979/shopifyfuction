@@ -30,6 +30,11 @@ query Input {
             cantidadGrupo: metafield(namespace: "custom", key: "price_group_qty") {
               value
             }
+            tag1200: hasAnyTag(tags: ["2x1200", "2X1200", "1200"])
+            tag1500: hasAnyTag(tags: ["2x1500", "2X1500", "2x1500-1", "1500"])
+            tag2000: hasAnyTag(tags: ["2x2000", "2X2000", "2x2000-calzado", "2000"])
+            tag2500: hasAnyTag(tags: ["2x2500", "2X2500", "2x2500-calzado", "2500"])
+            tag3000: hasAnyTag(tags: ["2x3000", "2X3000", "3000"])
           }
         }
       }

@@ -29,7 +29,7 @@ const CANTIDAD_MINIMA_DEFAULT = 2;
  */
 export function run(input) {
   const lineas = input.cart.lines;
-  
+
   let minItems = CANTIDAD_MINIMA_DEFAULT;
   const configMetafield = input.discountNode?.metafield?.value;
   if (configMetafield) {
@@ -38,12 +38,9 @@ export function run(input) {
       if (parsedConfig.minItems) {
         minItems = parseInt(parsedConfig.minItems, 10);
       }
-    } catch (e) {
-      // Ignore parse errors, fallback to default
-    }
+    } catch (e) {}
   }
 
-  // Recolectar líneas con metafield de grupo válido
   const lineasConGrupo = [];
   let maxPrecioUnitario = 0;
   const gruposDetectados = new Set();
@@ -51,17 +48,24 @@ export function run(input) {
   for (const linea of lineas) {
     if (linea.merchandise.__typename !== "ProductVariant") continue;
 
-    const metaGrupo = linea.merchandise.product.grupoPromo;
-    const metaCantidad = linea.merchandise.product.cantidadGrupo;
+    const prod = linea.merchandise.product;
+    const metaGrupo = prod.grupoPromo;
+    const metaCantidad = prod.cantidadGrupo;
 
-    if (!metaGrupo?.value) continue; // sin metafield → producto fuera de la promo
+    let precioTotal = 0;
+    if (metaGrupo?.value) {
+      precioTotal = parseFloat(metaGrupo.value);
+    } else if (prod.tag3000) precioTotal = 3000;
+    else if (prod.tag2500) precioTotal = 2500;
+    else if (prod.tag2000) precioTotal = 2000;
+    else if (prod.tag1500) precioTotal = 1500;
+    else if (prod.tag1200) precioTotal = 1200;
 
-    const precioTotal = parseFloat(metaGrupo.value);
     if (isNaN(precioTotal) || precioTotal <= 0) continue;
 
     const cantidad = metaCantidad?.value
       ? parseInt(metaCantidad.value, 10)
-      : CANTIDAD_MINIMA_DEFAULT;
+      : minItems;
 
     const precioUnitario = precioTotal / cantidad;
 
@@ -73,43 +77,55 @@ export function run(input) {
     }
   }
 
-  // Sin ítems con grupo válido → nada que hacer
   if (lineasConGrupo.length === 0) return SIN_DESCUENTO;
 
-  // Necesitamos al menos X ítems elegibles en total
-  const totalItems = lineasConGrupo.reduce((acc, { linea }) => acc + linea.quantity, 0);
+  const totalItems = lineasConGrupo.reduce(
+    (acc, { linea }) => acc + linea.quantity,
+    0
+  );
+
   if (totalItems < minItems) return SIN_DESCUENTO;
 
   const hayCruce = gruposDetectados.size > 1;
-  const precioObjetivo = maxPrecioUnitario;
+  const precioObjetivoUnitario = maxPrecioUnitario;
 
-  // Calcular descuento por línea: diferencia entre precio base y precio objetivo
-  const descuentos = lineasConGrupo.map(({ linea, precioTotal }) => {
-    const precioBase = parseFloat(linea.cost.amountPerQuantity.amount);
-    // Precio objetivo: siempre el del grupo más caro (si hay cruce o no)
-    const diferencia = precioBase - precioObjetivo;
+  const precioOriginalTotal = lineasConGrupo.reduce(
+    (acc, { linea }) =>
+      acc + parseFloat(linea.cost.amountPerQuantity.amount) * linea.quantity,
+    0
+  );
 
-    // No podemos subir precios — solo descontamos si el precio base es mayor
-    if (diferencia <= 0) return null;
+  const precioObjetivoTotal = totalItems * precioObjetivoUnitario;
 
-    return {
-      targets: [{ cartLine: { id: linea.id } }],
-      value: {
-        fixedAmount: {
-          amount: diferencia.toFixed(2),
-          appliesToEachItem: true,
-        },
-      },
-      message: hayCruce
-        ? `Promo cruzada: 2x${Math.round(maxPrecioUnitario * 2)}`
-        : `Promo 2x${Math.round(precioTotal)}`,
-    };
-  }).filter(Boolean);
+  // BUG 1 FIX: si el objetivo no genera ahorro real, no aplicar descuento
+  if (precioObjetivoTotal >= precioOriginalTotal) return SIN_DESCUENTO;
 
-  if (descuentos.length === 0) return SIN_DESCUENTO;
+  const descuentoTotal = precioOriginalTotal - precioObjetivoTotal;
+  const porcentajeDescuento = (descuentoTotal / precioOriginalTotal) * 100;
+
+  // BUG 3 FIX: clamp entre 0.0001 y 99.9999 para no romper la API de Shopify
+  const porcentajeFinal = Math.min(99.9999, Math.max(0.0001, porcentajeDescuento));
+
+  const targets = lineasConGrupo.map(({ linea }) => ({
+    cartLine: { id: linea.id },
+  }));
+
+  const debugMsg = `Dbg: OT=${precioOriginalTotal.toFixed(0)} Obj=${precioObjetivoTotal.toFixed(0)} Cruce=${hayCruce} minItems=${minItems} Desc=${porcentajeFinal.toFixed(2)}%`;
 
   return {
     discountApplicationStrategy: "MAXIMUM",
-    discounts: descuentos,
+    discounts: [
+      {
+        targets,
+        value: {
+          percentage: {
+            value: parseFloat(porcentajeFinal.toFixed(4)),
+          },
+        },
+        message: debugMsg,
+      },
+    ],
   };
 }
+
+export default run;

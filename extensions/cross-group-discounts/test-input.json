@@ -1,0 +1,55 @@
+{
+  "cart": {
+    "lines": [
+      {
+        "id": "gid://shopify/CartLine/1",
+        "quantity": 1,
+        "cost": {
+          "amountPerQuantity": {
+            "amount": "1890.00",
+            "currencyCode": "UYU"
+          }
+        },
+        "merchandise": {
+          "__typename": "ProductVariant",
+          "id": "gid://shopify/ProductVariant/1",
+          "product": {
+            "id": "gid://shopify/Product/1",
+            "tag3000": true,
+            "tag2500": false,
+            "tag2000": false,
+            "tag1500": false,
+            "tag1200": false
+          }
+        }
+      },
+      {
+        "id": "gid://shopify/CartLine/2",
+        "quantity": 1,
+        "cost": {
+          "amountPerQuantity": {
+            "amount": "1890.00",
+            "currencyCode": "UYU"
+          }
+        },
+        "merchandise": {
+          "__typename": "ProductVariant",
+          "id": "gid://shopify/ProductVariant/2",
+          "product": {
+            "id": "gid://shopify/Product/2",
+            "tag3000": false,
+            "tag2500": true,
+            "tag2000": false,
+            "tag1500": false,
+            "tag1200": false
+          }
+        }
+      }
+    ]
+  },
+  "discountNode": {
+    "metafield": {
+      "value": "{\"minItems\":2}"
+    }
+  }
+}
