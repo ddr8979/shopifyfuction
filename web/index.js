@@ -375,7 +375,7 @@ async function ensureAutomaticDiscount(client, { minItems }) {
   const ourFunction = functionsResponse.data.shopifyFunctions.nodes.find(
     (f) => f.apiType === "product_discounts" && 
            (f.title?.toLowerCase().includes("cross-group") || f.handle?.toLowerCase().includes("cross-group")) &&
-           f.app?.title?.includes("SEC")
+           f.app && f.app.id && f.app.id.includes("358363365377")
   );
   if (!ourFunction) throw new Error("Shopify Function no encontrada.");
 
