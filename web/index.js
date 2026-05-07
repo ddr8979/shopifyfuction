@@ -366,8 +366,8 @@ async function applyPromosFromCollections(client, promos) {
 }
 
 async function ensureAutomaticDiscount(client, { minItems }) {
-  // Usar directamente el UUID de la función de la extensión para evitar problemas de búsqueda y filtrado de la API
-  const functionId = "1b613333-a7cd-47f7-b41e-b13740e3d815";
+  // GID completo requerido por discountAutomaticAppCreate
+  const functionId = "gid://shopify/ShopifyFunction/1b613333-a7cd-47f7-b41e-b13740e3d815";
   const configValue = JSON.stringify({ minItems: parseInt(minItems, 10) || 2 });
 
   const createDiscountResponse = await client.request(
