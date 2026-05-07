@@ -366,8 +366,26 @@ async function applyPromosFromCollections(client, promos) {
 }
 
 async function ensureAutomaticDiscount(client, { minItems }) {
-  // GID completo requerido por discountAutomaticAppCreate
-  const functionId = "gid://shopify/ShopifyFunction/1b613333-a7cd-47f7-b41e-b13740e3d815";
+  // Buscar dinámicamente el functionId de nuestra extensión product_discounts
+  const fnResponse = await client.request(`
+    { shopifyFunctions(first: 25) { nodes { id title apiType app { title } } } }
+  `);
+  const allFunctions = fnResponse?.data?.shopifyFunctions?.nodes || [];
+  console.log("[SEC] Functions encontradas:", JSON.stringify(allFunctions.map(f => ({ id: f.id, title: f.title, apiType: f.apiType, app: f.app?.title }))));
+
+  // Buscar nuestra función por apiType = product_discounts y que pertenezca a nuestra app
+  const ourFunction = allFunctions.find(f =>
+    f.apiType === "product_discounts" &&
+    (f.app?.title?.includes("Motor de Descuentos") || f.title?.toLowerCase().includes("cross-group") || f.title?.toLowerCase().includes("cruce"))
+  );
+
+  if (!ourFunction) {
+    throw new Error(`No se encontró la función product_discounts. Functions disponibles: ${JSON.stringify(allFunctions.map(f => f.title + " (" + f.apiType + ")"))}`);
+  }
+
+  const functionId = ourFunction.id;
+  console.log("[SEC] Usando functionId:", functionId);
+
   const configValue = JSON.stringify({ minItems: parseInt(minItems, 10) || 2 });
 
   const createDiscountResponse = await client.request(
@@ -405,14 +423,13 @@ async function ensureAutomaticDiscount(client, { minItems }) {
   const errors = createDiscountResponse?.data?.discountAutomaticAppCreate?.userErrors || [];
   if (errors.length > 0) {
     const msg = errors[0].message || "Error creando descuento automático.";
-    // No fallar si ya existe uno con el mismo título.
     if (/already been taken|ya existe|already exists/i.test(msg)) {
       return { created: false, message: "El descuento automático ya existía." };
     }
     throw new Error(msg);
   }
 
-  return { created: true, message: "Descuento automático creado y activado." };
+  return { created: true, message: "Descuento automático creado y activado.", functionId };
 }
 
 async function getPromoSetupStatus(client) {
