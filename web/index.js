@@ -446,7 +446,6 @@ async function getPromoSetupStatus(client) {
             }
           }
         }
-        collectionsByHandle: nodes(ids: []) { id }
         collections: collections(first: 1) { nodes { id } }
         c1: collectionByHandle(handle: $handles[0]) { id handle title }
         c2: collectionByHandle(handle: $handles[1]) { id handle title }
