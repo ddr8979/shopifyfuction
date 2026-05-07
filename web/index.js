@@ -418,7 +418,7 @@ async function ensureAutomaticDiscount(client, { minItems }) {
 async function getPromoSetupStatus(client) {
   const response = await client.request(
     `
-      query PromoSetupStatus($handles: [String!]!) {
+      query PromoSetupStatus($h1: String!, $h2: String!, $h3: String!, $h4: String!, $h5: String!) {
         metafieldDefinitions(first: 50, ownerType: PRODUCT, namespace: "custom") {
           nodes { key type name }
         }
@@ -435,16 +435,20 @@ async function getPromoSetupStatus(client) {
           }
         }
         collections: collections(first: 1) { nodes { id } }
-        c1: collectionByHandle(handle: $handles[0]) { id handle title }
-        c2: collectionByHandle(handle: $handles[1]) { id handle title }
-        c3: collectionByHandle(handle: $handles[2]) { id handle title }
-        c4: collectionByHandle(handle: $handles[3]) { id handle title }
-        c5: collectionByHandle(handle: $handles[4]) { id handle title }
+        c1: collectionByHandle(handle: $h1) { id handle title }
+        c2: collectionByHandle(handle: $h2) { id handle title }
+        c3: collectionByHandle(handle: $h3) { id handle title }
+        c4: collectionByHandle(handle: $h4) { id handle title }
+        c5: collectionByHandle(handle: $h5) { id handle title }
       }
     `,
     {
       variables: {
-        handles: ["2x1200", "2x1500-1", "2x2000-calzado", "2x2500-calzado", "2x3000"],
+        h1: "2x1200",
+        h2: "2x1500-1",
+        h3: "2x2000-calzado",
+        h4: "2x2500-calzado",
+        h5: "2x3000",
       },
     }
   );
