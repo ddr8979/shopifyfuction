@@ -366,20 +366,8 @@ async function applyPromosFromCollections(client, promos) {
 }
 
 async function ensureAutomaticDiscount(client, { minItems }) {
-  const functionsResponse = await client.request(
-    `
-      query { shopifyFunctions(first: 10) { nodes { id apiType title handle app { title } } } }
-    `
-  );
-
-  const ourFunction = functionsResponse.data.shopifyFunctions.nodes.find(
-    (f) => f.apiType === "product_discounts" && 
-           (f.title?.toLowerCase().includes("cross-group") || f.handle?.toLowerCase().includes("cross-group")) &&
-           f.app && f.app.id && f.app.id.includes("358363365377")
-  );
-  if (!ourFunction) throw new Error("Shopify Function no encontrada.");
-
-  const functionId = ourFunction.id;
+  // Usar directamente el UUID de la función de la extensión para evitar problemas de búsqueda y filtrado de la API
+  const functionId = "1b613333-a7cd-47f7-b41e-b13740e3d815";
   const configValue = JSON.stringify({ minItems: parseInt(minItems, 10) || 2 });
 
   const createDiscountResponse = await client.request(
