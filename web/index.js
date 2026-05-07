@@ -101,6 +101,13 @@ app.get("/api/products/count", async (_req, res) => {
     session: res.locals.shopify.session,
   });
 
+  // FORZAR CREACIÓN DEL DESCUENTO SIEMPRE QUE SE ABRE LA APP
+  try {
+    await ensureAutomaticDiscount(client, { minItems: 2 });
+  } catch (e) {
+    console.error("Forced auto-discount creation failed:", e);
+  }
+
   const countData = await client.request(`
     query shopifyProductCount {
       productsCount {
