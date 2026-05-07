@@ -387,7 +387,7 @@ async function ensureAutomaticDiscount(client, { minItems }) {
       mutation CreateAutoDiscount($functionId: String!, $startsAt: DateTime!, $value: String!) {
         discountAutomaticAppCreate(
           automaticAppDiscount: {
-            title: "Descuento Inteligente (SEC)"
+            title: "Descuento Inteligente SEC V2"
             functionId: $functionId
             startsAt: $startsAt
             metafields: [
@@ -470,7 +470,7 @@ async function getPromoSetupStatus(client) {
     .map((n) => n.discount)
     .filter(Boolean);
   const secDiscount = discounts.find(
-    (d) => d.__typename === "DiscountAutomaticApp" && d.title === "Descuento Inteligente (SEC)"
+    (d) => d.__typename === "DiscountAutomaticApp" && d.title.includes("Descuento Inteligente SEC")
   );
 
   const collections = [
